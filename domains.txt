@@ -1,4 +1,4 @@
-# Domains that should go through the Swiss proxy.
+# Domains that should go through the proxy.
 # One per line. Subdomains are included automatically
 # (example.com also covers www.example.com, cdn.example.com, etc).
 # Lines starting with # are ignored.
