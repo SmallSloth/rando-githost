@@ -9,4 +9,6 @@ browserleaks.com
 
 # sites
 hitomi.la
-rule34.xxx
+rule34.net
+nhentai.net
+hanime.tv
