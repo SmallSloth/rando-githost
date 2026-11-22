@@ -1,8 +1,14 @@
-name: Deploy proxy.pac to GitHub Pages
+name: Build and deploy proxy.pac
 
-# Manual trigger only: run it from the repo's Actions tab.
+# Runs when you click "Run workflow" in the Actions tab,
+# and automatically whenever domains.txt or this file is edited on main.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - domains.txt
+      - .github/workflows/pages.yml
 
 permissions:
   contents: read
@@ -12,6 +18,10 @@ permissions:
 concurrency:
   group: pages
   cancel-in-progress: true
+
+env:
+  # Your PC's LAN address and the wireproxy port. Edit if your PC's IP changes.
+  PROXY_ADDR: "192.168.1.59:8118"
 
 jobs:
   deploy:
@@ -23,10 +33,45 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v4
 
-      - name: Stage only proxy.pac
+      - name: Generate proxy.pac from domains.txt
         run: |
           mkdir _site
-          cp proxy.pac _site/
+          python3 - <<'EOF'
+          import json, os, re
+
+          proxy = os.environ["PROXY_ADDR"]
+          domains = []
+          for line in open("domains.txt", encoding="utf-8"):
+              line = line.split("#", 1)[0].strip().lower()
+              if not line:
+                  continue
+              if line.startswith("*."):
+                  line = line[2:]
+              if not re.fullmatch(r"[a-z0-9]([a-z0-9.-]*[a-z0-9])?", line):
+                  raise SystemExit("Invalid domain in domains.txt: " + line)
+              domains.append(line)
+
+          template = """// Generated from domains.txt. Do not edit by hand.
+          var domains = %DOMAINS%;
+
+          function FindProxyForURL(url, host) {
+            // wireproxy's HTTP proxy only supports HTTPS, so plain http goes direct
+            if (url.substring(0, 6) !== "https:") return "DIRECT";
+
+            host = host.toLowerCase();
+            for (var i = 0; i < domains.length; i++) {
+              var d = domains[i];
+              if (host === d || shExpMatch(host, "*." + d))
+                return "PROXY %PROXY%; DIRECT";
+            }
+            return "DIRECT";
+          }
+          """
+
+          pac = template.replace("%DOMAINS%", json.dumps(domains)).replace("%PROXY%", proxy)
+          open("_site/proxy.pac", "w", encoding="utf-8").write(pac)
+          print("Wrote proxy.pac with", len(domains), "domains")
+          EOF
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
