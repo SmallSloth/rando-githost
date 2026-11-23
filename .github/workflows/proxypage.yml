@@ -1,14 +1,8 @@
 name: Build and deploy proxy.pac
 
-# Runs when you click "Run workflow" in the Actions tab,
-# and automatically whenever the files in protonvpn-wireproxy/ or this file are edited on main.
+# Runs only when you click "Run workflow" in the Actions tab.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - protonvpn-wireproxy/domains.txt
-      - protonvpn-wireproxy/index.html
 
 permissions:
   contents: read
@@ -17,7 +11,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   # Folder in the repo that holds domains.txt and index.html.
@@ -26,11 +20,8 @@ env:
   PROXY_ADDR: "192.168.1.59:8118"
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -76,6 +67,7 @@ jobs:
           print("Wrote proxy.pac with", len(domains), "domains")
           EOF
           cp "$SRC_DIR/index.html" _site/
+          ls -la _site
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -85,6 +77,13 @@ jobs:
         with:
           path: _site
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
