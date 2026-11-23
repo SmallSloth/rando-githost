@@ -4,12 +4,7 @@ name: Build protonproxy.exe
 # to the run as a downloadable artifact.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - protonvpn-wireproxy/**
-      - .github/workflows/build.yml
-
+  
 permissions:
   contents: read
 
