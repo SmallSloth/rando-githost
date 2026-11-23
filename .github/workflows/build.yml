@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
     paths:
-      - protonvpn-wireproxy/protonproxy/**
+      - protonvpn-wireproxy/**
       - .github/workflows/build.yml
 
 permissions:
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: protonvpn-wireproxy/protonproxy
+        working-directory: protonvpn-wireproxy
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -46,4 +46,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: protonproxy-windows
-          path: protonvpn-wireproxy/protonproxy/protonproxy.exe
+          path: protonvpn-wireproxy/protonproxy.exe
