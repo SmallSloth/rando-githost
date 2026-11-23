@@ -1,0 +1,49 @@
+name: Build protonproxy.exe
+
+# Compiles the Go program on GitHub's servers and attaches protonproxy.exe
+# to the run as a downloadable artifact.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - protonvpn-wireproxy/protonproxy/**
+      - .github/workflows/build.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: protonvpn-wireproxy/protonproxy
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: false
+
+      - name: Fetch dependencies
+        run: |
+          [ -f go.mod ] || go mod init protonproxy
+          go get golang.zx2c4.com/wireguard@latest
+          go mod tidy
+
+      - name: Build Windows exe
+        env:
+          GOOS: windows
+          GOARCH: amd64
+          CGO_ENABLED: "0"
+        run: go build -trimpath -ldflags="-s -w" -o protonproxy.exe .
+
+      - name: Upload exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: protonproxy-windows
+          path: protonvpn-wireproxy/protonproxy/protonproxy.exe
